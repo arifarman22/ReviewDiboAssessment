@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 import re
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserWithToken
@@ -12,11 +12,11 @@ def sanitize_text(text: str) -> str:
 
 
 class AuthService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: Session):
         self.repo = UserRepository(db)
 
-    async def register(self, data: UserCreate) -> UserWithToken:
-        existing = await self.repo.get_by_email(data.email)
+    def register(self, data: UserCreate) -> UserWithToken:
+        existing = self.repo.get_by_email(data.email)
         if existing:
             raise ConflictException(detail="A user with this email already exists")
 
@@ -25,7 +25,7 @@ class AuthService:
             email=data.email,
             hashed_password=hash_password(data.password),
         )
-        user = await self.repo.create(user)
+        user = self.repo.create(user)
 
         token = create_access_token({"sub": user.id, "email": user.email})
         return UserWithToken(
@@ -33,8 +33,8 @@ class AuthService:
             access_token=token,
         )
 
-    async def login(self, email: str, password: str) -> UserWithToken:
-        user = await self.repo.get_by_email(email)
+    def login(self, email: str, password: str) -> UserWithToken:
+        user = self.repo.get_by_email(email)
         if not user or not verify_password(password, user.hashed_password):
             raise BadRequestException(detail="Invalid email or password")
 
@@ -44,8 +44,8 @@ class AuthService:
             access_token=token,
         )
 
-    async def get_user(self, user_id: str) -> User:
-        user = await self.repo.get_by_id(user_id)
+    def get_user(self, user_id: str) -> User:
+        user = self.repo.get_by_id(user_id)
         if not user:
-            raise NotFoundException(detail=f"User with id '{user_id}' not found")
+            raise NotFoundException(detail=f"User not found")
         return user

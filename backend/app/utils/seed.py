@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone, timedelta
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from app.models.user import User
 from app.models.product import Product
@@ -144,11 +144,9 @@ SEED_REVIEWS = [
 ]
 
 
-async def seed_database(db: AsyncSession) -> None:
+def seed_database(db: Session) -> None:
     """Seed the database with initial data if empty."""
-    # Check if data already exists
-    result = await db.execute(select(func.count(User.id)))
-    user_count = result.scalar() or 0
+    user_count = db.query(func.count(User.id)).scalar() or 0
 
     if user_count > 0:
         logger.info("Database already seeded, skipping...")
@@ -156,7 +154,6 @@ async def seed_database(db: AsyncSession) -> None:
 
     logger.info("Seeding database with initial data...")
 
-    # Create admin user
     admin = User(
         id=str(uuid.uuid4()),
         name="Admin User",
@@ -166,7 +163,6 @@ async def seed_database(db: AsyncSession) -> None:
     )
     db.add(admin)
 
-    # Create users
     users = []
     for u_data in SEED_USERS:
         user = User(
@@ -178,9 +174,8 @@ async def seed_database(db: AsyncSession) -> None:
         db.add(user)
         users.append(user)
 
-    await db.flush()
+    db.flush()
 
-    # Create products
     products = []
     for p_data in SEED_PRODUCTS:
         product = Product(
@@ -195,9 +190,8 @@ async def seed_database(db: AsyncSession) -> None:
         db.add(product)
         products.append(product)
 
-    await db.flush()
+    db.flush()
 
-    # Create reviews
     now = datetime.now(timezone.utc)
     for r_data in SEED_REVIEWS:
         review = Review(
@@ -210,7 +204,7 @@ async def seed_database(db: AsyncSession) -> None:
         )
         db.add(review)
 
-    await db.commit()
+    db.commit()
     logger.info(
         f"Database seeded: {len(users) + 1} users, {len(products)} products, {len(SEED_REVIEWS)} reviews"
     )

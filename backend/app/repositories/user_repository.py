@@ -1,35 +1,27 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import select
 from typing import Optional
 from app.models.user import User
 
 
 class UserRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: Session):
         self.db = db
 
-    async def get_by_id(self, user_id: str) -> Optional[User]:
-        result = await self.db.execute(select(User).where(User.id == user_id))
-        return result.scalar_one_or_none()
+    def get_by_id(self, user_id: str) -> Optional[User]:
+        return self.db.query(User).filter(User.id == user_id).first()
 
-    async def get_by_email(self, email: str) -> Optional[User]:
-        result = await self.db.execute(select(User).where(User.email == email))
-        return result.scalar_one_or_none()
+    def get_by_email(self, email: str) -> Optional[User]:
+        return self.db.query(User).filter(User.email == email).first()
 
-    async def get_all(self) -> list[User]:
-        result = await self.db.execute(select(User).order_by(User.created_at.desc()))
-        return list(result.scalars().all())
+    def get_all(self) -> list[User]:
+        return self.db.query(User).order_by(User.created_at.desc()).all()
 
-    async def create(self, user: User) -> User:
+    def create(self, user: User) -> User:
         self.db.add(user)
-        await self.db.flush()
-        await self.db.refresh(user)
+        self.db.flush()
+        self.db.refresh(user)
         return user
 
-    async def delete(self, user: User) -> None:
-        await self.db.delete(user)
-        await self.db.flush()
-
-    async def exists(self, user_id: str) -> bool:
-        result = await self.db.execute(select(User.id).where(User.id == user_id))
-        return result.scalar_one_or_none() is not None
+    def exists(self, user_id: str) -> bool:
+        return self.db.query(User.id).filter(User.id == user_id).first() is not None

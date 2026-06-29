@@ -36,7 +36,7 @@ app.include_router(review_router, prefix=settings.API_PREFIX)
 
 
 @app.get("/", tags=["Health"])
-async def root():
+def root():
     return {
         "success": True,
         "message": f"{settings.APP_NAME} is running",
@@ -46,20 +46,22 @@ async def root():
 
 
 @app.get("/health", tags=["Health"])
-async def health_check():
+def health_check():
     return {"status": "healthy", "service": settings.APP_NAME}
 
 
 @app.get("/seed", tags=["Admin"])
-async def seed_db():
+def seed_db():
     """Manually trigger database seed (call once after first deploy)."""
-    from app.database import engine, Base, AsyncSessionLocal
+    from app.database import engine, Base, SessionLocal
     from app.utils.seed import seed_database
     try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        async with AsyncSessionLocal() as session:
-            await seed_database(session)
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            seed_database(db)
+        finally:
+            db.close()
         return {"success": True, "message": "Database seeded"}
     except Exception as e:
         return {"success": False, "message": str(e)}

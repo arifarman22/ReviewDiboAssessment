@@ -150,9 +150,9 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
       {/* Show logged-in user name */}
       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border-subtle)]">
         <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center">
-          <span className="text-[9px] font-bold text-white">{user.name.charAt(0).toUpperCase()}</span>
+          <span className="text-[9px] font-bold text-white">{user?.name?.charAt(0).toUpperCase()}</span>
         </div>
-        <span className="text-sm font-medium text-[var(--foreground)]">{user.name}</span>
+        <span className="text-sm font-medium text-[var(--foreground)]">{user?.name}</span>
       </div>
 
       {/* Rating */}

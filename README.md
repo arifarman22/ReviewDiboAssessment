@@ -8,12 +8,12 @@ A full-stack review platform where users can browse products, read reviews, subm
 
 | Resource | URL |
 |----------|-----|
-| **Frontend (Next.js)** | [https://review-sphere-frontend.vercel.app](https://review-sphere-frontend.vercel.app) |
-| **Backend API (FastAPI)** | [https://review-sphere-backend.vercel.app](https://review-sphere-backend.vercel.app) |
-| **API Documentation (Swagger)** | [https://review-sphere-backend.vercel.app/docs](https://review-sphere-backend.vercel.app/docs) |
-| **GitHub Repository** | [https://github.com/your-username/ReviewSphere](https://github.com/your-username/ReviewSphere) |
+| **Frontend (Next.js)** | [https://review-dibo-assessment-rtr9.vercel.app](https://review-dibo-assessment-rtr9.vercel.app) |
+| **Backend API (FastAPI)** | [https://review-dibo-assessment.vercel.app](https://review-dibo-assessment.vercel.app) |
+| **API Documentation (Swagger)** | [https://review-dibo-assessment.vercel.app/docs](https://review-dibo-assessment.vercel.app/docs) |
+| **GitHub Repository** | [https://github.com/arifarman22/ReviewDiboAssessment](https://github.com/arifarman22/ReviewDiboAssessment) |
 
-> ⚠️ Replace the above URLs with your actual deployed URLs after deployment.
+> ⚠️ The above URLs are live and deployed.
 
 ---
 

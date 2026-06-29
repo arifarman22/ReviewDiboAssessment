@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
 
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:8000", "https://review-dibo-assessment.vercel.app", "https://review-dibo-assessment-rtr9.vercel.app"]
 
     # Pagination
     DEFAULT_PAGE_SIZE: int = 10

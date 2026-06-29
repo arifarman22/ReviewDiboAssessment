@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import IntegrityError
@@ -26,28 +25,6 @@ logger.add(
     level="DEBUG" if settings.DEBUG else "INFO",
 )
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application startup and shutdown lifecycle."""
-    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-
-    # Create tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables created/verified")
-
-    # Seed database
-    async with AsyncSessionLocal() as session:
-        await seed_database(session)
-
-    yield
-
-    # Shutdown
-    await engine.dispose()
-    logger.info("Application shutdown complete")
-
-
 # Create FastAPI application
 app = FastAPI(
     title=settings.APP_NAME,
@@ -58,19 +35,12 @@ app = FastAPI(
 A production-ready REST API for a Product Review Platform.
 
 ### Features
-- 🔐 JWT Authentication (Register/Login)
-- 📦 Product CRUD (Admin)
-- ⭐ Review Management (Create/Update/Delete)
-- 🔍 Search, Filter, Sort, Pagination
-- 📊 Rating Breakdowns & Statistics
-
-### Tech Stack
-- FastAPI + SQLAlchemy 2.0 (Async)
-- PostgreSQL + Alembic Migrations
-- Pydantic v2 Validation
-- JWT Authentication
+- JWT Authentication (Register/Login)
+- Product CRUD (Admin)
+- Review Management (Create/Update/Delete)
+- Search, Filter, Sort, Pagination
+- Rating Breakdowns & Statistics
     """,
-    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -88,6 +58,30 @@ app.add_exception_handler(Exception, generic_exception_handler)
 app.include_router(auth_router, prefix=settings.API_PREFIX)
 app.include_router(product_router, prefix=settings.API_PREFIX)
 app.include_router(review_router, prefix=settings.API_PREFIX)
+
+# Track if DB has been initialized this cold start
+_db_initialized = False
+
+
+async def ensure_db_ready():
+    """Create tables and seed on first request (serverless-compatible startup)."""
+    global _db_initialized
+    if _db_initialized:
+        return
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        async with AsyncSessionLocal() as session:
+            await seed_database(session)
+        _db_initialized = True
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Database initialization error: {e}")
+
+
+@app.on_event("startup")
+async def startup():
+    await ensure_db_ready()
 
 
 @app.get("/", tags=["Health"])

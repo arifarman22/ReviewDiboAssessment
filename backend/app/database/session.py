@@ -1,6 +1,7 @@
 import ssl as ssl_module
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 from app.config.settings import get_settings
 
 settings = get_settings()
@@ -8,22 +9,19 @@ settings = get_settings()
 # Build connect_args for Neon SSL
 connect_args = {}
 if "neon.tech" in settings.DATABASE_URL:
-    # asyncpg requires ssl context for Neon
     ssl_context = ssl_module.create_default_context()
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl_module.CERT_NONE
     connect_args["ssl"] = ssl_context
 
-# Strip query params that asyncpg doesn't understand from URL
+# Strip query params that asyncpg doesn't understand
 db_url = settings.DATABASE_URL.split("?")[0] if "neon.tech" in settings.DATABASE_URL else settings.DATABASE_URL
 
 engine = create_async_engine(
     db_url,
-    echo=settings.DEBUG,
+    echo=False,
     pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=5,
-    pool_recycle=300,
+    poolclass=NullPool,
     connect_args=connect_args,
 )
 

@@ -1,23 +1,21 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from app.config.settings import get_settings
 
 settings = get_settings()
 
-# Convert async URL to sync format
+# Normalize URL for psycopg2
 db_url = settings.DATABASE_URL
-# postgresql+asyncpg:// → postgresql://
-# postgresql+psycopg:// → postgresql://
+
+# Strip driver prefixes to plain postgresql://
 if "+asyncpg" in db_url:
     db_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
-elif "+psycopg" in db_url:
+elif "+psycopg://" in db_url:
     db_url = db_url.replace("postgresql+psycopg://", "postgresql://")
 
-# Keep sslmode param, drop others
-if "?" in db_url:
-    base, params = db_url.split("?", 1)
-    kept = [p for p in params.split("&") if "ssl" in p.lower()]
-    db_url = base + ("?" + "&".join(kept) if kept else "")
+# Fix query params: remove all and just add sslmode=require for Neon
+if "neon.tech" in db_url:
+    db_url = db_url.split("?")[0] + "?sslmode=require"
 
 engine = create_engine(
     db_url,

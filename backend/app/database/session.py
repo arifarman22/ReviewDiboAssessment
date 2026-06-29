@@ -1,4 +1,3 @@
-import ssl as ssl_module
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool
@@ -6,23 +5,28 @@ from app.config.settings import get_settings
 
 settings = get_settings()
 
-# Build connect_args for Neon SSL
-connect_args = {}
-if "neon.tech" in settings.DATABASE_URL:
-    ssl_context = ssl_module.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl_module.CERT_NONE
-    connect_args["ssl"] = ssl_context
+# Convert URL to use psycopg async driver
+# Input: postgresql+asyncpg://... → postgresql+psycopg://...
+# Input: postgresql://... → postgresql+psycopg://...
+db_url = settings.DATABASE_URL
+if "asyncpg" in db_url:
+    db_url = db_url.replace("postgresql+asyncpg://", "postgresql+psycopg://")
+elif db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
-# Strip query params that asyncpg doesn't understand
-db_url = settings.DATABASE_URL.split("?")[0] if "neon.tech" in settings.DATABASE_URL else settings.DATABASE_URL
+# Remove query params that may cause issues, keep sslmode
+# psycopg handles sslmode=require natively
+if "?" in db_url:
+    base, params = db_url.split("?", 1)
+    # Keep only sslmode param
+    kept = [p for p in params.split("&") if p.startswith("sslmode")]
+    db_url = base + ("?" + "&".join(kept) if kept else "")
 
 engine = create_async_engine(
     db_url,
     echo=False,
     pool_pre_ping=True,
     poolclass=NullPool,
-    connect_args=connect_args,
 )
 
 AsyncSessionLocal = async_sessionmaker(

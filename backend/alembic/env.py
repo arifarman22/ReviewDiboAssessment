@@ -1,4 +1,3 @@
-import ssl as ssl_module
 import asyncio
 from logging.config import fileConfig
 from sqlalchemy import pool
@@ -13,8 +12,18 @@ from app.config.settings import get_settings
 settings = get_settings()
 config = context.config
 
-# Build the clean URL for asyncpg (strip query params for Neon)
-db_url = settings.DATABASE_URL.split("?")[0] if "neon.tech" in settings.DATABASE_URL else settings.DATABASE_URL
+# Convert URL for psycopg
+db_url = settings.DATABASE_URL
+if "asyncpg" in db_url:
+    db_url = db_url.replace("postgresql+asyncpg://", "postgresql+psycopg://")
+elif db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+if "?" in db_url:
+    base, params = db_url.split("?", 1)
+    kept = [p for p in params.split("&") if p.startswith("sslmode")]
+    db_url = base + ("?" + "&".join(kept) if kept else "")
+
 config.set_main_option("sqlalchemy.url", db_url)
 
 if config.config_file_name is not None:
@@ -42,19 +51,10 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    # Build connect_args for Neon SSL
-    connect_args = {}
-    if "neon.tech" in settings.DATABASE_URL:
-        ssl_context = ssl_module.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl_module.CERT_NONE
-        connect_args["ssl"] = ssl_context
-
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        connect_args=connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

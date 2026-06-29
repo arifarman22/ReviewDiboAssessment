@@ -5,7 +5,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/review_platform"
+    DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/review_platform"
 
     # Application
     SECRET_KEY: str = "your-super-secret-key-change-in-production-min-32-chars"

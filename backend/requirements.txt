@@ -2,7 +2,8 @@ fastapi
 uvicorn[standard]
 python-multipart
 sqlalchemy[asyncio]
-asyncpg
+psycopg[binary]
+psycopg-binary
 alembic
 pydantic
 pydantic-settings
